@@ -18,6 +18,4 @@ require SYS_PATH . 'db.php';
 
 $db['server'] = 'localhost';
 $db['user'] = 'root';
-$db['pass'] = 'sk1701d';
-$db['name'] = 'mvc_cactus';
 $db['handler'] = 'mysqli';
