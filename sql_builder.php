@@ -157,7 +157,7 @@ class Sql_builder
 		
 		if (defined('DEBUG') && DEBUG == true)
 			echo "<pre>" . $sql . "</pre>";
-		return DB::init()->result($sql);
+		return DB::init()->get_result($sql);
 	}
 	
 	function count_query()
