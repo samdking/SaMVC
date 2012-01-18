@@ -30,6 +30,6 @@ class MySQLi_handler extends DB_handler {
 	
 	function get_error()
 	{
-	   $this->handle->error;
+	   return $this->handle->error;
    }
 }

@@ -19,6 +19,8 @@ abstract class Relation
 			$this->model = $args['model'];
 		if (isset($args['required']))
 			$this->required = $args['required'];
+		if (isset($args['related_name']))
+   	   $this->related_name = $args['related_name'];
 		$this->foreign_key = $args['foreign_key'];
 	}
 	
@@ -70,6 +72,12 @@ abstract class Relation
 	function get_result()
 	{
 		return $this->result;
+	}
+	
+	function get_reverse_rel()
+	{
+	   $name = $this->related_name;
+	   return $this->model()->find_relationship($name);
 	}
 	
 	function related()

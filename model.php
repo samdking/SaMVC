@@ -119,8 +119,8 @@ class Model extends Base
    	   $args['related_name'] = Inflector::pluralise($this->name());
    	if (!isset($args['foreign_key']))
    		$args['foreign_key'] = $this->name() . '_id';
-   	if (!isset($args['join_key']))
-   	   $args['join_key'] = Inflector::singularise($name) . '_id';
+   	if (!isset($args['related_foreign_key']))
+   	   $args['related_foreign_key'] = Inflector::singularise($name) . '_id';
 	   $this->relationships[$name] = new Has_mm_relation($name, $args);
 	}
 	
@@ -146,7 +146,7 @@ class Model extends Base
 		$this->relationships[$name] = new Belongs_to_relation($name, $args);
 	}
 	
-	function find_relationship(&$name)
+	function find_relationship($name)
 	{
 		if (isset($this->relationships[$name]))
 			return $this->relationships[$name];

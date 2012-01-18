@@ -3,20 +3,21 @@
 class Has_mm_relation extends Relation
 {   
    protected $join_table;
-   protected $join_key;
+   protected $related_foreign_key;
    protected $related_name;
    
 	function __construct($name, $args = array())
 	{
 		$this->join_table = $args['join_table'];
-		$this->related_name = $args['related_name'];
-	   $this->join_key = isset($args['join_key'])? $args['join_key'] : Inflector::singularise($name) . '_id'; 
+	   $this->related_foreign_key = isset($args['related_foreign_key'])? 
+	      $args['related_foreign_key'] : 
+	      Inflector::singularise($name) . '_id';
 		parent::__construct($name, $args);
 	}
 	
-	function join_key()
+	function related_foreign_key()
 	{
-	   return $this->join_key;
+	   return $this->related_foreign_key;
 	}
 	
 	function join_table()
@@ -34,7 +35,7 @@ class Has_mm_relation extends Relation
 			),
 			array(
 				'table' => $this->table_alias(),
-				'on' => array($this->join_table . '.' . $this->join_key => $this->primary_key()),
+				'on' => array($this->join_table . '.' . $this->related_foreign_key => $this->primary_key()),
 				'required' => true
 			)
 		);
@@ -72,7 +73,7 @@ class Has_mm_relation extends Relation
          else
          	$obj->$prop = $collection->add_result(array());
 	   }
-	   return $result;
+	   return $results;
 	}
 
 }
