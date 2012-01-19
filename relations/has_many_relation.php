@@ -21,18 +21,17 @@ class Has_many_relation extends Relation
    	   ));
       }
 		$through_model = Model::get($this->through);
-	   $rel_name = Inflector::pluralise($through_model->name());
-	   $through_rel = $through_model->find_relationship($this->name);
-	   var_dump($through_rel);
+		$through_rel = $through_model->find_relation_by_model($this->model(false));
+		$back_rel = $through_model->find_relation_by_model(get_class($to));
 	   return array(
 	      array(
-	         'table' => $through_model->table_alias($rel_name),
-	         'on' => array($rel_name . '.' . $through_rel->get_reverse_rel()->foreign_key => $to->primary_key()),
+	         'table' => $through_model->table_alias(),
+	         'on' => array($through_model->name() . '.' . $back_rel->foreign_key => $to->primary_key()),
 	         'required' => $this->required
 	      ),
 	      array(
-	         'table' => $through_rel->table_alias(),
-	         'on' => array($rel_name . '.' . $through_rel->foreign_key => $through_rel->primary_key()),
+	         'table' => $this->table_alias(),
+	         'on' => array($through_model->name() . '.' . $through_rel->foreign_key => $this->primary_key()),
 	         'required' => $this->required
 	      )
 	   );
@@ -40,7 +39,7 @@ class Has_many_relation extends Relation
 	
 	function collection($obj)
 	{
-	   $fk = $this->foreign_key();
+	   $fk = $this->through? $this->model()->id_field : $this->foreign_key;
 	   $collection = new Collection($this->model(), $this);
 	   return $collection->filter(array($this->related_alias() => $obj->$fk));
 	}

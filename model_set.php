@@ -225,9 +225,24 @@ class Model_set implements ArrayAccess, Iterator, Countable
 	   return $this;
 	}
 	
-	function includes($rel_name)
+	function includes($rel_name_or_array)
 	{
-	   $this->includes[] = $this->of_model->find_relationship($rel_name);
+	   $args = func_get_args();
+	   if (count($args) > 1)
+	      $include_array = $args;
+	   elseif (is_array($rel_name_or_array))
+	      $include_array = $rel_name_or_array;
+	   else
+	      $include_array = array($rel_name_or_array);
+	   foreach($include_array as $rel_name)
+	      $this->includes[] = $this->of_model->find_relationship($rel_name);
+	   return $this;
+	}
+	
+	function requires($name)
+	{
+	   $rel = $this->of_model->find_relationship($name);
+	   $this->filter(array($rel->primary_key() . ' >'=> 0));
 	   return $this;
 	}
 	

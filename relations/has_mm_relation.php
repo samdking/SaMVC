@@ -35,7 +35,7 @@ class Has_mm_relation extends Relation
 			),
 			array(
 				'table' => $this->table_alias(),
-				'on' => array($this->join_table . '.' . $this->related_foreign_key => $this->primary_key()),
+				'on' => array($this->join_table . '.' . $this->get_reverse_rel()->foreign_key => $this->primary_key()),
 				'required' => true
 			)
 		);

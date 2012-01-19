@@ -156,6 +156,13 @@ class Model extends Base
 		return false;
 	}
 	
+	function find_relation_by_model($model_name)
+	{
+	   foreach($this->relationships as $name => $rel)
+	      if ($rel->model(false) == strtolower($model_name))
+	         return $rel;
+	}
+	
 	function name()
 	{
 		if (!$this->model_name) 
@@ -171,7 +178,7 @@ class Model extends Base
 		return $this->db_table . ' AS `' . $alias . '`';
 	}
 	
-	function get_db_table_name()
+	private function get_db_table_name()
 	{
 		if (isset($this->db_table))
 			return;
@@ -180,7 +187,7 @@ class Model extends Base
 	
 	function model()
 	{
-		return $this;
+	   return $this;
 	}
 	
 	function primary_key($alias = NULL)
@@ -205,7 +212,7 @@ class Model extends Base
 			$this->relationships[$rel_name]->add_result($value);
 	}
 	
-	function requires($model_name)
+	function inherits($model_name)
 	{
 		Model::get($model_name);
 	}

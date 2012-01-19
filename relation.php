@@ -39,11 +39,11 @@ abstract class Relation
 		return (Boolean)$this->required;
 	}
 	
-	function model()
+	function model($instantiate = true)
 	{
 		if (!$this->model)
-			$this->model = Inflector::singularise($this->name);
-		return Model::get($this->model);
+			$this->model = Inflector::singularise($this->name);		
+		return $instantiate? Model::get($this->model) : $this->model;
 	}
 	
 	function use_plural($plural)
