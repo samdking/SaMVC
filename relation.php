@@ -13,7 +13,7 @@ abstract class Relation
 	
 	function __construct($name, $args = array())
 	{
-		$this->required = true;
+		$this->required = false;
 		$this->name = $name;
 		if (isset($args['model']))
 			$this->model = $args['model'];
