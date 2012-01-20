@@ -2,13 +2,11 @@
 
 class Controller extends Base
 {
-   static private $start_time = 0;
    protected $view_file = NULL;
    protected $view_vars = array();
    
    static function load($name)
    {
-      self::$start_time = microtime(false);
       $file = 'controllers/' . $name;
       include self::find_file($file);
       $class_name = $name . 'Controller';
@@ -42,7 +40,7 @@ class Controller extends Base
       }
       $count = count(DB::init()->queries());
       $this->render('footer', array(
-         'render_time' => round((microtime(false) - self::$start_time), 5),
+         'render_time' => round((microtime(false) - START_TIME), 5),
          'query_count' => $count . ' ' . ($count == 1? 'query' : 'queries')
       ));
    }

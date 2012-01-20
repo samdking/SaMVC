@@ -1,5 +1,7 @@
 <?php
 
+define('START_TIME', microtime(false));
+
 define('SYS_PATH', dirname(__FILE__) . '/');
 define('APP_PATH', getcwd() . '/mvc/');
 
@@ -17,5 +19,4 @@ require SYS_PATH . 'inflector.php';
 require SYS_PATH . 'db.php';
 
 $db['server'] = 'localhost';
-$db['user'] = 'root';
 $db['handler'] = 'mysqli';
