@@ -11,16 +11,16 @@ class Base {
 		
 		foreach($file_locations as $file) {
 			$file .= '.php';
-			if (file_exists(SYS_PATH . $file))
-				return SYS_PATH . $file;
+			if (file_exists(APP_PATH . $file))
+				return APP_PATH . $file;
 		}
 		
 		// then check app folder
 		
 		foreach($file_locations as $file) {
 			$file .= '.php';
-			if (file_exists(APP_PATH . $file))
-				return APP_PATH . $file;
+			if (file_exists(SYS_PATH . $file))
+				return SYS_PATH . $file;
 		}
 		
 		if ($required)
