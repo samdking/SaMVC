@@ -120,10 +120,9 @@ class Sql_builder
 		return $this;
 	}
 
-	function query($override = array())
+	function query()
 	{	
 		extract(get_object_vars($this));
-		extract($override); 
 
 		$sql[] = "SELECT " . implode(', ', $select);	
 		$sql[] = "FROM " . $table;
@@ -158,10 +157,15 @@ class Sql_builder
 		return DB::init()->get_result($sql);
 	}
 	
+	function reset_select()
+	{
+	   $this->select = NULL;
+	}
+	
 	function count_query()
 	{
-		$override = array('select' => array('count(*)'));
-		return $this->query($override);
+		$this->select = array('count(*)');
+		return $this->query();
 	}
 	
 	function set($keyvals)
