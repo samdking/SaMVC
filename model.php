@@ -57,7 +57,7 @@ class Model extends Base
 	function __set($prop, $val)
 	{
 		if (isset($this->relationships[$prop])) {
-			$foreign_key = $this->relationships[$prop]->foreign_key();
+			$foreign_key = $this->relationships[$prop]->foreign_key($this);
 			unset($this->$foreign_key);
 		}
 		$this->properties[$prop] = $val;
@@ -66,9 +66,9 @@ class Model extends Base
 	function get_rel_model_set($method)
 	{
 		$rel = $this->relationships[$method];
-		$model_set = $rel->collection($this);
-		$this->$method = $model_set;
-		return $model_set;
+		$collection = $rel->collection($this);
+		$this->$method = $collection;
+		return $collection;
 	}
 	
 	function __get($prop)
@@ -110,40 +110,19 @@ class Model extends Base
 	function has_mm($name, $args = array())
 	{
 	   $this->prevent_naming_clashes($name);
-		if (!isset($args['join_table'])) {
-		   $lexical_order = array($name, Inflector::pluralise($this->name()));
-		   sort($lexical_order);
-		   $args['join_table'] = implode('_mm_', $lexical_order);
-   	}
-   	if (!isset($args['related_name']))
-   	   $args['related_name'] = Inflector::pluralise($this->name());
-   	if (!isset($args['foreign_key']))
-   		$args['foreign_key'] = $this->name() . '_id';
-   	if (!isset($args['related_foreign_key']))
-   	   $args['related_foreign_key'] = Inflector::singularise($name) . '_id';
-	   $this->relationships[$name] = new Has_mm_relation($name, $args);
+	   $this->relationships[$name] = new Has_mm_relation($name, $this, $args);
 	}
 	
 	function has_many($name, $args = array())
 	{
-		$this->prevent_naming_clashes($name);
-   	if (!isset($args['related_name']))
-   	   if (isset($args['through']))
-   	      $args['related_name'] = Inflector::pluralise($this->name());
-		   else
-		      $args['related_name'] = $this->name();
-		if (!isset($args['foreign_key']))
-			$args['foreign_key'] = $this->name() . '_id';
-		if (isset($args['through']))
-			if (!Model::get($args['through']))
-				throw new Exception("Couldn't find model '".$args['through']."'");
-		$this->relationships[$name] = new Has_many_relation($name, $args);
+	   $this->prevent_naming_clashes($name);
+		$this->relationships[$name] = new Has_many_relation($name, $this, $args);
 	}
 	
 	function belongs_to($name, $args = array())
 	{	
 		$this->prevent_naming_clashes($name);
-		$this->relationships[$name] = new Belongs_to_relation($name, $args);
+		$this->relationships[$name] = new Belongs_to_relation($name, $this, $args);
 	}
 	
 	function find_relationship($name)
@@ -166,14 +145,14 @@ class Model extends Base
 	function name()
 	{
 		if (!$this->model_name) 
-			$this->model_name = strtolower(get_class($this));
+			$this->model_name = Inflector::pluralise(strtolower(get_class($this)));
 		return $this->model_name;
 	}
 	
 	function table_alias($alias = NULL)
 	{
 		$alias = is_null($alias)? $this->name() : $alias;
-		if ($this->db_table == $alias)
+		if ($this->db_table == $alias || !$alias)
 			return $this->db_table;
 		return $this->db_table . ' AS `' . $alias . '`';
 	}
@@ -182,7 +161,7 @@ class Model extends Base
 	{
 		if (isset($this->db_table))
 			return;
-		$this->db_table = Inflector::pluralise(strtolower(get_class($this)));
+		$this->db_table = $this->name();
 	}
 	
 	function model()
