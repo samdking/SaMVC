@@ -19,8 +19,9 @@ abstract class Db_handler {
    	array_push($this->queries, htmlspecialchars($query));
 	   if (!$result = $this->query($query))
 	      throw new DbException("Couldn't excute the query: " . $query . " because: " . $this->get_error());
-	   else
-	      return $result;
+	   if (defined('DEBUG') && DEBUG == true)
+   		echo "<pre>" . $query . "</pre>";
+	   return $result;
 	}
 	
 	function get_result($sql)

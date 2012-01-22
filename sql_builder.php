@@ -155,8 +155,6 @@ class Sql_builder
 
 		$sql = implode("\n", $sql); // perform this query
 		
-		if (defined('DEBUG') && DEBUG == true)
-			echo "<pre>" . $sql . "</pre>";
 		return DB::init()->get_result($sql);
 	}
 	
@@ -179,8 +177,6 @@ class Sql_builder
 		$sql[] = "INSERT INTO " . reset(explode(' ', $this->table));
 		$sql[] = "SET " . implode(",\n    ", $this->set);
 		$sql = implode("\n", $sql); // perform this query
-		if (defined('DEBUG') && DEBUG == true)
-			echo "<pre>" . $sql . "</pre>";
 		DB::init()->query($sql);
 	}
 	
@@ -197,8 +193,6 @@ class Sql_builder
 			$where_conditions[] = '('.implode("\n  AND ", $conditions).')';
 		$sql[] = "WHERE " . implode("\n  AND ", $where_conditions);
 		$sql = implode("\n", $sql); // perform this query
-		if (defined('DEBUG') && DEBUG == true)
-			echo "<pre>" . $sql . "</pre>";
 		DB::init()->query($sql);
 	}
 	
