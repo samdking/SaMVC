@@ -1,25 +1,26 @@
 <?php
-function highlight($word)
-{
-   echo '<b style="color: red; font-size: 20px">' . $word . '</b>';
-}
+
 require 'sql_builder.php';
 
-class RecordNotFoundException extends Exception {}
+class RecordNotFoundException extends Exception {
+   protected $message = 'Record not found';
+}
    
-class MultipleRecordsFoundException extends Exception {}
+class MultipleRecordsFoundException extends Exception {
+   protected $message = 'Multiple records found';
+}
 
 class Model_set implements ArrayAccess, Iterator, Countable
 {	
 	protected $result = array();
 	protected $sql;
 	protected $has_result = false;
-	private $includes = array();
 	private $relations = array();
 	private $annotations = NULL;
 	private $of_model;
 	private $single_result = false;
 	private $additional_models = array();
+	private $preload = array();
 	
 	function __construct($model)
 	{
@@ -69,12 +70,13 @@ class Model_set implements ArrayAccess, Iterator, Countable
 	
 	function find($pk)
 	{   
-		$params = func_get_args();
-		if (is_array($pk) && count($pk) > 1 && is_int(key($pk)))
+		if (is_array($pk) && is_int(key($pk)))
 			return $this->find_many_by_pk($pk);
-		
+      
+      $params = func_get_args();		
 		if (count($params) > 1)
 			return $this->find_many_by_pk($params);
+		
 		return $this->find_one_by_pk($pk);
 	}
 	
@@ -88,19 +90,19 @@ class Model_set implements ArrayAccess, Iterator, Countable
 		$result = $this->retrieve_result();
 		if (!$result)
 			throw new RecordNotFoundException();
-		if (count($results) > 1)
+		if (count($result) > 1)
 		   throw new MultipleRecordsFoundException();
 		return $result;
 	}
 	
 	function find_many_by_pk(Array $pks)
 	{   
-		$this->sql->conditions(array($this->of_model->primary_key() . ' in' => $pks));
+		$this->sql->conditions(array($this->of_model->primary_key() => $pks));
 		
 		$results = $this->retrieve_result();
       
-		if (count($results) < count($pks))
-			throw new RecordNotFoundException();
+		//if (count($results) < count($pks))
+		//	throw new RecordNotFoundException();
 		return $results;
 	}
 	
@@ -113,6 +115,7 @@ class Model_set implements ArrayAccess, Iterator, Countable
 	
 	function find_rels($arr)
 	{
+	   $loop = array();
 		$current = $this->of_model;
 		foreach($arr as $name) {
 			$rel = $current->model()->find_relationship($name);
@@ -120,16 +123,18 @@ class Model_set implements ArrayAccess, Iterator, Countable
 			   throw new Exception("No relationship called " . $name . " in " . get_class($current->model()) . " model.");
 			$model = $rel->model();
 			$key = get_class($model);
-			if (isset($this->relations[$key]))
+			if (isset($this->relations[$name])) {
+			   $current = $rel;
 				continue;
+			}
 			if ($rel->required())
 				$this->add_default_conditions($model->filter, $rel->name());
-			$this->relations[$key] = $rel;
+			$this->relations[$name] = $rel;
 			$this->additional_models[$name] = $rel;
-			$this->sql->add_join($rel->join_statement($current));
+			$this->sql->add_join($rel->join_statement());
 			$current = $rel;
-			}
-		return $name;
+		}
+		return $current;
 	}
 	
 	function add_default_conditions($conditions, $pre)
@@ -150,7 +155,7 @@ class Model_set implements ArrayAccess, Iterator, Countable
 		elseif (empty($rels))
 		   return $this->of_model->name() . '.' . $field_name;
 		else
-		   return $this->find_rels($rels) . '.' . $field_name;
+		   return $this->find_rels($rels)->name() . '.' . $field_name;
 	}
 	
 	function foreign_key_alias($field)
@@ -224,40 +229,73 @@ class Model_set implements ArrayAccess, Iterator, Countable
 	   $this->sql->group($this->of_model->primary_key());
 	   return $this;
 	}
+
+   function aggregate($array)
+   {
+      $this->sql->reset_select();
+      foreach($array as $function => $field)
+         $this->sql->select($function . '(' . $field . ')', $field . '_' . $function);
+      return reset($this->values());
+   }
+	
+	function add_preload($arr)
+	{
+	   if (is_array($arr))
+	      $this->preload = $arr;
+	   return $this;
+	}
 	
 	function includes($rel_name_or_array)
 	{
 	   $args = func_get_args();
-	   if (count($args) > 1)
-	      $include_array = $args;
-	   elseif (is_array($rel_name_or_array))
+	   if (is_array($rel_name_or_array))
 	      $include_array = $rel_name_or_array;
+	   elseif (count($args) > 1)
+	      $include_array = $args;
 	   else
 	      $include_array = array($rel_name_or_array);
-	   foreach($include_array as $rel_name)
-	      $this->includes[] = $this->of_model->find_relationship($rel_name);
+	      
+      foreach($include_array as $line) {   
+         $cur = &$this->preload;
+         foreach (explode('.', $line) as $word) {
+            $cur[$word] = array();
+            $cur = &$cur[$word];
+         }
+         $cur = NULL;
+      }
+   	
 	   return $this;
 	}
 	
 	function requires($name)
 	{
 	   $rel = $this->of_model->find_relationship($name);
-	   $this->filter(array($rel->primary_key() . ' >'=> 0));
+	   $this->sql->add_join($rel->join_statement(true));
 	   return $this;
 	}
 	
-	function retrieve_result()
-	{	   
-	   if ($this->has_result) 
-			return $this->result;
-		try {
+	function values()
+	{
+	   return $this->result_from_db();
+	}
+	
+	function result_from_db()
+	{
+	   try {
 			$results = $this->sql->query();
 		} catch (DbException $e) {
 			echo '<pre class="error">' . $e->getMessage() . '</pre>';
 			return;
 		}	
 		$this->has_result = true;
-		
+		return $results;
+	}
+	
+	function retrieve_result()
+	{	   
+	   if ($this->has_result) 
+			return $this->result;
+		$results = $this->result_from_db();		
 	   $base_model = get_class($this->of_model);
 		foreach($results as $i=>$row_data) {
 			$base_obj = new $base_model($row_data);
@@ -282,8 +320,8 @@ class Model_set implements ArrayAccess, Iterator, Countable
 			$this->result[$i] = $base_obj;
 		}
 		
-      foreach($this->includes as $rel) {
-         $rel->assign_results($this->result);
+      foreach($this->preload as $rel_name => $includes) {
+         $this->of_model->find_relationship($rel_name)->assign_results($this->result, $includes);
 		}
 		
    	if ($this->single_result)
