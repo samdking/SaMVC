@@ -7,21 +7,29 @@ abstract class Relation
 	protected $name;
 	protected $model;
 	protected $foreign_key;
-	protected $primary_key;
 	protected $required;
 	protected $related_name;
+	protected $object;
 	
-	function __construct($name, $args = array())
+	function __construct($name, $obj, $args = array())
 	{
-		$this->required = false;
+	   $defaults = array(
+	     'model' => NULL,
+	     'required' => false,
+	     'related_name' => NULL
+	   );
+	   $this->object = $obj;
 		$this->name = $name;
-		if (isset($args['model']))
-			$this->model = $args['model'];
-		if (isset($args['required']))
-			$this->required = $args['required'];
-		if (isset($args['related_name']))
-   	   $this->related_name = $args['related_name'];
-		$this->foreign_key = $args['foreign_key'];
+   	$args = array_merge($this->defaults($defaults), $args);
+		$props = array_keys(get_class_vars(get_class($this)));
+		foreach($args as $key => $val)
+		   if (in_array($key, $props))
+		      $this->$key = $val;
+	}
+	
+	function defaults($defaults)
+	{
+	   return $defaults;
 	}
 	
 	function table_alias()
@@ -52,26 +60,11 @@ abstract class Relation
 		return $this;
 	}
 	
-	abstract function join_statement($to);
+	abstract function join_statement();
 	
 	function foreign_key()
 	{
 		return $this->foreign_key;
-	}
-	
-	function add_result($value)
-	{
-		$this->result = $value;
-	}
-	
-	function has_result()
-	{
-		return isset($this->result);
-	}
-	
-	function get_result()
-	{
-		return $this->result;
 	}
 	
 	function get_reverse_rel()
@@ -95,4 +88,14 @@ abstract class Relation
 	   $obj = $obj? $obj : $this->model();
 	   return $this->related_name . '.' . $obj->id_field;
 	}
+
+   function get_primary_keys($vals = array(), $field = NULL)
+	{
+	   foreach($vals as $val)
+	      $values[] = $field? $val->$field : $val->id();
+	   if (is_array($values))
+      	$values = array_values(array_unique($values));
+   	return $values;
+	}
+
 }
