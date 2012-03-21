@@ -2,30 +2,21 @@
 
 class Controller extends Base
 {
-   protected $view_file = NULL;
-   protected $view_vars = array();
-   
-   static function select()
-   {
-      $uri = str_replace(URL_PATH, '', $_SERVER['REQUEST_URI']);
-      $uri = Hook::apply('modify_uri', $uri);
-      $parts = array_filter(explode('/', $uri));
-      $controller_name = empty($parts)? DEFAULT_CONTROLLER : $parts[0];
-      try {
-         Controller::route_controller($controller_name)->route_method($parts);
-      } catch (Exception $e) {
-         Controller::route_controller('error')->render_page('index', array($e));   
-      }      
-   }
-   
-   static function route_controller($name)
+   protected $view_vars = array(
+   	'no_view_file' => false,
+		'page_title' => '',
+		'header_file' => 'header',
+		'footer_file' => 'footer'
+   );
+
+   static function get($name)
    {   
-      $class_name = strtoupper($name) . 'Controller';
+      $class_name = ucfirst($name) . 'Controller';
       if (!class_exists($class_name)) {
          try {
-            include self::find_file('controllers/' . $name);
+            include self::find_file('controllers/' . $name); // look for a controller that matches
          } catch (Exception $e) {
-            return self::route_controller(DEFAULT_CONTROLLER);
+            return Controller::get(DEFAULT_CONTROLLER); // if not, serve the default
          }
       }
       return new $class_name;
@@ -56,20 +47,18 @@ class Controller extends Base
    
    function render_page($method, $parts)
    {
-      $header_file = 'header';
-      $footer_file = 'footer';
-      $this->view_file = $this->name() . '/' . $method;
-      call_user_func_array(array($this, $method), (array)$parts);
+		call_user_func_array(array($this, $method), (array)$parts);
+		$view_file = $this->name() . '/' . $method;
       extract($this->view_vars);
-      $this->header_file = self::find_file('views/' . $header_file);
-      $this->content_file = self::find_file('views/' . $this->view_file);
+		if ($no_view_file) return;
+		$this->header_file = self::find_file('views/' . $header_file);
+      $this->content_file = self::find_file('views/' . $view_file);
       $this->footer_file = self::find_file('views/' . $footer_file);
       $this->render_output();
    }
    
    function render_output()
-   {      
-      $page_title = '';
+   {
       extract($this->view_vars);
       include $header_file;
       include $content_file;
